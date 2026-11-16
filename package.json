@@ -1,11 +1,11 @@
 {
   "name": "splectral-server",
-  "id": "14e7e831-6f15-4bdd-b5aa-553ea776d366",
-  "description": "The Splectral server: extensions, configuration, sources, topics, actions dispatched and recorded, the app served",
+  "version": "0.3.0",
+  "description": "Module: Splectral's server on an mrepo, the commands of an install shown in a browser as they complete.",
   "type": "module",
-  "exports": "./index.js",
+  "main": "index.js",
   "scripts": {
-    "test": "node --test test/*.test.js"
+    "test": "bare ../../node_modules/brittle/cmd.js test/*.test.js"
   },
   "license": "MIT"
 }
