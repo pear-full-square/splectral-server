@@ -1,4 +1,0 @@
-{
-  "mode": "atomic",
-  "description": "The links: every mrepo this mrepo links, a record each: what this machine knows of it. For the mrepo's own use."
-}
