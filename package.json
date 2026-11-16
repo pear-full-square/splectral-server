@@ -1,62 +1,11 @@
 {
-  "name": "dev-env-3-mycelium",
-  "private": true,
+  "name": "splectral-server",
+  "version": "0.3.0",
+  "description": "Module: Splectral's server on an mrepo, the commands of an install shown in a browser as they complete.",
   "type": "module",
-  "description": "Every module as one dependency tree (npm workspaces): each module a folder (pear-full-square/<module>), their dependencies resolved together, once. The dependencies here are what the applications composing them need: Bare's runtime (for the third-party package, so the node image needs no global install) and its aliases for Node's built-ins. The host side on Bare too: Bare's own modules (bare-fs, bare-subprocess, ...) and brittle for the tests, carried into the packages by the package writer.",
-  "workspaces": [
-    "pear-full-square/mrepo-base-runtime",
-    "pear-full-square/mrepo-base-help",
-    "pear-full-square/mrepo-base-request",
-    "pear-full-square/mrepo-base-execute",
-    "pear-full-square/mrepo-base-boot",
-    "pear-full-square/mycelium-container-document",
-    "pear-full-square/mycelium-value-json",
-    "pear-full-square/mycelium-git",
-    "pear-full-square/mycelium-xpath",
-    "pear-full-square/mycelium-uri",
-    "pear-full-square/p2p-store",
-    "pear-full-square/p2p-replicate",
-    "pear-full-square/p2p-mrepo",
-    "pear-full-square/pkgm-base-manager",
-    "pear-full-square/pkgm-base-check",
-    "pear-full-square/mrepo-base-service",
-    "pear-full-square/mrepo-base-xpath",
-    "pear-full-square/mrepo-base-haicc",
-    "pear-full-square/mrepo-base-protocol",
-    "pear-full-square/haicc-base-app",
-    "pear-full-square/mrepo-base-crud",
-    "pear-full-square/mrepo-base-container"
-  ],
-  "dependencies": {
-    "bare-bundle": "1.11.0",
-    "bare-crypto": "1.15.4",
-    "bare-dgram": "1.1.1",
-    "bare-fs": "4.8.4",
-    "bare-hrtime": "2.1.2",
-    "bare-http1": "4.6.3",
-    "bare-os": "3.9.4",
-    "bare-pack": "3.0.2",
-    "bare-path": "3.1.2",
-    "bare-process": "4.5.1",
-    "bare-runtime": "1.36.0",
-    "bare-subprocess": "6.2.2",
-    "bare-tcp": "2.6.1",
-    "bare-tty": "5.2.2",
-    "bare-url": "2.5.6",
-    "bare-zlib": "^1.4.1",
-    "brittle": "4.5.0",
-    "child_process": "npm:bare-node-child-process@1.0.1",
-    "crypto": "npm:bare-node-crypto@1.0.0",
-    "fs": "npm:bare-node-fs@1.0.2",
-    "os": "npm:bare-node-os@1.0.1",
-    "path": "npm:bare-node-path@1.0.1",
-    "process": "npm:bare-node-process@1.0.1",
-    "url": "npm:bare-node-url@1.0.1",
-    "util": "npm:bare-node-util@1.0.0"
+  "main": "index.js",
+  "scripts": {
+    "test": "bare ../../node_modules/brittle/cmd.js test/*.test.js"
   },
-  "assemble": {
-    "omit": [
-      "bare-cov"
-    ]
-  }
+  "license": "MIT"
 }
