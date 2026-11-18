@@ -7,11 +7,11 @@ import http from 'bare-http1'
 import process from 'bare-process'
 import os from 'bare-os'
 import { spawn } from 'bare-subprocess'
-import { mkdtempSync, mkdirSync, writeFileSync, renameSync, rmSync, existsSync } from 'bare-fs'
+import { mkdtempSync, mkdirSync, writeFileSync, renameSync, rmSync, existsSync, readFileSync, readdirSync } from 'bare-fs'
 import { join, dirname } from 'bare-path'
 import { tmpdir } from 'bare-os'
 import { fileURLToPath } from 'bare-url'
-import { summaryOf, follow, serve, createStructure, launch, end, stateOf, start, stop, status, PAGE, PORT, HOST, ROOT, STATE } from '../index.js'
+import { summaryOf, follow, serve, createStructure, launch, end, stateOf, start, stop, status, PAGE, PORT, HOST, ROOT, STATE, SIDE, COMPONENTS } from '../index.js'
 
 const CLI = join(dirname(fileURLToPath(import.meta.url)), '..', 'cli.js')
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
@@ -269,3 +269,63 @@ test('the actions: start, status, stop; what start refuses', { timeout: 60000 },
   }
 })
 
+
+test('a component: a page asked through its Splectral inbox, its data request run through the root mrepo\'s inbox, the page served; one not answering; one not running', { timeout: 60000 }, async (t) => {
+  const work = mkdtempSync(join(tmpdir(), 'splectral-components-'))
+  const boot = join(work, 'mrepos', 'boot')
+  const dir = join(work, 'mrepos', 'local', 'splectral')
+  const viewer = join(work, 'mrepos', 'local', 'viewer')
+  for (const f of [join(boot, 'inbox'), join(boot, 'outbox'), dir, join(viewer, SIDE, 'inbox'), join(viewer, SIDE, 'outbox')]) mkdirSync(f, { recursive: true })
+  const put = (folder, key, value) => { writeFileSync(join(folder, `${key}.json.new`), JSON.stringify(value)); renameSync(join(folder, `${key}.json.new`), join(folder, `${key}.json`)) }
+  // the root mrepo, as far as the test goes: a command in, its completed form out
+  const asked = []
+  const root = follow(join(boot, 'inbox'), (envelope) => {
+    const core = envelope.value
+    asked.push({ topic: envelope.topic, parts: core.value, trigger: core.headers.trigger })
+    put(join(boot, 'outbox'), core.key, { topic: core.topic, key: core.key, timestamp: new Date().toISOString(), headers: {}, value: { ...core, value: { command: core.value, output: { page: '# Validation\n\nBefore every commit.' } } } })
+  }, { every: 200 })
+  // the component's renderer, as far as the test goes: a page asked, data asked for it, the page answered
+  const pages = []
+  const renderer = follow(join(viewer, SIDE, 'inbox'), (envelope, file) => {
+    const form = envelope.value.value
+    rmSync(join(viewer, SIDE, 'inbox', file), { force: true })
+    if (form.request === 'page') {
+      pages.push({ ...form, key: envelope.key })
+      put(join(viewer, SIDE, 'outbox'), `d${envelope.key.slice(1)}`, { topic: '/splectral', key: `d${envelope.key.slice(1)}`, timestamp: new Date().toISOString(), headers: { page: envelope.key }, value: { topic: '/local/viewer/splectral/inbox', key: `d${envelope.key.slice(1)}`, timestamp: new Date().toISOString(), headers: {}, value: { request: 'data', at: 'docs', command: ['info/get', form.path] } } })
+    } else if (form.request === 'data') {
+      const key = pages.at(-1).key
+      put(join(viewer, SIDE, 'outbox'), key, { topic: '/splectral', key, timestamp: new Date().toISOString(), headers: {}, value: { topic: '/splectral', key, timestamp: new Date().toISOString(), headers: {}, value: { request: 'page', path: pages.at(-1).path, output: `<h1>${form.output.page.split('\n')[0].slice(2)}</h1>` } } })
+    }
+  }, { every: 200 })
+  mkdirSync(join(dir, COMPONENTS), { recursive: true })
+  // their renderers' state, as runtime/start leaves it: the viewer's and the quiet one's running (this process), the stopped one's none
+  const running = (folder) => { mkdirSync(join(folder, SIDE, 'packages', 'splectral'), { recursive: true }); writeFileSync(join(folder, SIDE, 'packages', 'splectral', 'r.state.json'), JSON.stringify({ pid: Bare.pid })) }
+  running(viewer)
+  writeFileSync(join(dir, COMPONENTS, 'viewer.json'), JSON.stringify({ at: 'viewer', mrepo: 'local/viewer', folder: viewer, component: 'splectral/base-component-viewer', list: ['splectral/r'], installed: 'now' }))
+  writeFileSync(join(dir, COMPONENTS, 'quiet.json'), JSON.stringify({ at: 'quiet', mrepo: 'local/quiet', folder: join(work, 'mrepos', 'local', 'quiet'), component: 'splectral/x', list: ['splectral/r'], installed: 'now' }))
+  mkdirSync(join(work, 'mrepos', 'local', 'quiet', SIDE, 'outbox'), { recursive: true })
+  running(join(work, 'mrepos', 'local', 'quiet'))
+  writeFileSync(join(dir, COMPONENTS, 'stopped.json'), JSON.stringify({ at: 'stopped', mrepo: 'local/stopped', folder: join(work, 'mrepos', 'local', 'stopped'), component: 'splectral/x', list: ['splectral/r'], installed: 'now' }))
+  mkdirSync(join(work, 'mrepos', 'local', 'stopped', SIDE, 'outbox'), { recursive: true })
+  const s = await serve({ outbox: join(boot, 'outbox'), dir, port: 0, every: 200, wait: 1500 })
+  try {
+    t.alike(s.components(), ['quiet', 'stopped', 'viewer'], 'its components, from the records install leaves')
+    const page = await ask(`${s.url}/viewer/hdlc/validation?x=1`)
+    t.is(page.status, 200, 'a component\'s page')
+    t.is(page.body, '<h1>Validation</h1>', 'as the component made it')
+    t.alike([pages[0].path, pages[0].query], ['hdlc/validation', { x: '1' }], 'the page asked: its path below the component, its query')
+    t.alike(asked, [{ topic: '/local/boot/inbox', parts: ['haicc', 'docs', 'info/get', 'hdlc/validation'], trigger: 'external' }], 'its data request: a command at the root, as a terminal sends it')
+    t.ok(await until(() => readdirSync(join(viewer, SIDE, 'outbox')).length === 0), 'what the server took from the component\'s outbox removed')
+    const none = await ask(`${s.url}/quiet/x`)
+    t.is(none.status, 504, 'a component that does not answer: said')
+    t.ok(none.body.includes('is its service started?'))
+    const stopped = await ask(`${s.url}/stopped/x`)
+    t.alike([stopped.status, stopped.body.includes('not running: stopped')], [503, true], 'one whose renderer does not run: said at once')
+    t.is((await ask(`${s.url}/nothing`)).status, 404, 'no component there: nothing here')
+  } finally {
+    await s.close()
+    root.stop()
+    renderer.stop()
+    rmSync(work, { recursive: true, force: true })
+  }
+})
