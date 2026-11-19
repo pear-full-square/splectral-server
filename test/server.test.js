@@ -150,9 +150,9 @@ test('the server: the page, the lines, one record whole, each new line streamed;
     stream.on('error', () => {})
     stream.end()
     t.ok(await until(() => s.clients() === 1), 'a stream open')
-    drop(folder, record(3, { command: ['boot/deploy', 'host', 'base-component-haicc'], log: [] }))
+    drop(folder, record(3, { command: ['boot/deploy', 'host', 'haiccing/base-component-haicc'], log: [] }))
     t.ok(await until(() => lines.length === 1), 'a record arrives: its line streamed')
-    t.alike([lines[0].key, lines[0].command, lines[0].through], [KEYS[3], 'boot/deploy host base-component-haicc', []], 'the line')
+    t.alike([lines[0].key, lines[0].command, lines[0].through], [KEYS[3], 'boot/deploy host haiccing/base-component-haicc', []], 'the line')
     t.is(s.records().length, 3, 'and among the lines')
     // the structure: folded from the records, asked for, and streamed when one changes it
     t.alike([s.root, ROOT, JSON.parse((await ask(`${s.url}/structure`)).body)], ['local/boot', 'local/boot', { root: 'local/boot', nodes: [{ uri: 'local/boot', parent: null, at: '.', package: null, service: null, container: null, depth: 0 }] }], 'the structure asked for: the root alone, no record having said more')
@@ -161,7 +161,7 @@ test('the server: the page, the lines, one record whole, each new line streamed;
     second2.on('error', () => {})
     second2.end()
     t.ok(await until(() => s.clients() === 2), 'a second stream open')
-    const deployed = record(0, { command: ['boot/deploy', 'host', 'base-component-haicc'], log: [], done: '2026-11-16T10:00:09.000Z' })
+    const deployed = record(0, { command: ['boot/deploy', 'host', 'haiccing/base-component-haicc'], log: [], done: '2026-11-16T10:00:09.000Z' })
     deployed.value.value.output = { deployed: 'host', mrepo: 'local/host', package: 'haiccing/base-component-haicc' }
     drop(folder, deployed)
     t.ok(await until(() => structures.length === 1), 'a record that changes the structure: the structure streamed, an event of its own')
