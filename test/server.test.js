@@ -11,7 +11,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, renameSync, rmSync, existsSync, 
 import { join, dirname } from 'bare-path'
 import { tmpdir } from 'bare-os'
 import { fileURLToPath } from 'bare-url'
-import { summaryOf, follow, serve, createStructure, launch, end, stateOf, start, stop, status, PAGE, PORT, HOST, ROOT, STATE, SIDE, COMPONENTS } from '../index.js'
+import { summaryOf, follow, serve, createStructure, launch, end, stateOf, start, stop, status, PAGE, site, SHOWN, PORT, HOST, ROOT, STATE, SIDE, COMPONENTS } from '../index.js'
 
 const CLI = join(dirname(fileURLToPath(import.meta.url)), '..', 'cli.js')
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
@@ -125,7 +125,23 @@ test('the install folded from its completed records: its mrepos a tree, each wit
   t.alike([at('local/host').package, at('local/host').service], ['b', null], 'a redeploy: the node new, its state gone')
 })
 
-test('the server: the page, the lines, one record whole, each new line streamed; closed', async (t) => {
+test('the site: its tabs, Splectral\'s own first; a section\'s page embedded in its content area, its links at the top; the rest in a drop-down; static', (t) => {
+  const tabs = [{ name: 'install', label: 'install', href: '/install' }, { name: 'help', label: 'help', href: '/help/' }]
+  const html = site({ tabs, selected: 'help', content: '<!doctype html><html><head><title>x</title></head><body><a href="/help/x">"x" & y</a></body></html>' })
+  t.ok(html.includes('<title>Splectral · help</title>'), 'the site, the section shown')
+  t.ok(html.includes('<a href="/install">install</a><a href="/help/" class="on" aria-current="page">help</a>'), 'its tabs, a component\'s at its own URI, the one shown marked')
+  t.ok(html.includes('srcdoc="<!doctype html><html><head><base href=&quot;/help/&quot; target=&quot;_top&quot;><title>x</title></head><body><a href=&quot;/help/x&quot;>&quot;x&quot; &amp; y</a></body></html>"'), 'the section\'s page embedded whole, its base its section\'s address, its links opening at the top')
+  t.ok(site({ tabs, selected: 'nothing' }).includes('<a href="/install" class="on"'), 'none there: the first')
+  t.absent(/<script\b/.test(html), 'static: no script of its own')
+  t.absent(html.includes('<details'), 'few tabs: no drop-down')
+  const many = [tabs[0], ...Array.from({ length: SHOWN + 1 }, (_, i) => ({ name: `c${i}`, label: `c${i}`, href: `/c${i}/` }))]
+  const crowded = site({ tabs: many, selected: `c${SHOWN}` })
+  t.is((crowded.match(/<nav>.*<details/)[0].match(/<a /g) ?? []).length, SHOWN, 'the first five shown')
+  t.ok(crowded.includes('<details open><summary>more (2)</summary>'), 'the rest in a drop-down, open when the one shown is in it')
+  t.exception(() => site({ tabs: [] }), /missing argument: tabs/)
+})
+
+test('the server: the site, its own page, the lines, one record whole, each new line streamed; closed', async (t) => {
   const folder = mkdtempSync(join(tmpdir(), 'splectral-serve-'))
   let s = null
   let second = null
@@ -134,8 +150,11 @@ test('the server: the page, the lines, one record whole, each new line streamed;
     drop(folder, record(2, { error: 'no node there' }))
     s = await serve({ outbox: folder, port: 0, every: 100 })
     t.ok(/^http:\/\/127\.0\.0\.1:\d+$/.test(s.url) && s.port > 0, 'served on this machine only, at a free port when 0 is asked')
-    const page = await ask(`${s.url}/`)
-    t.alike([page.status, page.type, page.body === PAGE, page.body.includes('<title>Splectral</title>')], [200, 'text/html; charset=utf-8', true, true], 'the page')
+    const front = await ask(`${s.url}/`)
+    const own = site({ tabs: [{ name: 'install', label: 'install', href: '/install' }], selected: 'install', content: PAGE })
+    t.alike([front.status, front.type, front.body === own], [200, 'text/html; charset=utf-8', true], 'the site, its own page in it')
+    t.is((await ask(`${s.url}/install`)).body, own, 'the same at /install')
+    t.ok(PAGE.includes('<title>Splectral</title>'), 'its own page')
     t.absent(/src="http|href="http|@import/.test(PAGE), 'nothing loaded from elsewhere')
     // its script reads as JavaScript: made a function, not run
     const script = PAGE.slice(PAGE.indexOf('<script>') + '<script>'.length, PAGE.indexOf('</script>'))
@@ -312,7 +331,8 @@ test('a component: a page asked through its Splectral inbox, its data request ru
     t.alike(s.components(), ['quiet', 'stopped', 'viewer'], 'its components, from the records install leaves')
     const page = await ask(`${s.url}/viewer/hdlc/validation?x=1`)
     t.is(page.status, 200, 'a component\'s page')
-    t.is(page.body, '<h1>Validation</h1>', 'as the component made it')
+    t.ok(page.body.includes('<a href="/install">install</a><a href="/quiet/">quiet</a><a href="/stopped/">stopped</a><a href="/viewer/" class="on" aria-current="page">viewer</a>'), 'in the site: a tab a component, its own shown')
+    t.ok(page.body.includes('srcdoc="<base href=&quot;/viewer/&quot; target=&quot;_top&quot;><h1>Validation</h1>"'), 'its page in the site\'s content area, as the component made it, its base its section')
     t.alike([pages[0].path, pages[0].query], ['hdlc/validation', { x: '1' }], 'the page asked: its path below the component, its query')
     t.alike(asked, [{ topic: '/local/boot/inbox', parts: ['haicc', 'docs', 'info/get', 'hdlc/validation'], trigger: 'external' }], 'its data request: a command at the root, as a terminal sends it')
     t.ok(await until(() => readdirSync(join(viewer, SIDE, 'outbox')).length === 0), 'what the server took from the component\'s outbox removed')
@@ -320,7 +340,7 @@ test('a component: a page asked through its Splectral inbox, its data request ru
     t.is(none.status, 504, 'a component that does not answer: said')
     t.ok(none.body.includes('is its service started?'))
     const stopped = await ask(`${s.url}/stopped/x`)
-    t.alike([stopped.status, stopped.body.includes('not running: stopped')], [503, true], 'one whose renderer does not run: said at once')
+    t.alike([stopped.status, stopped.body.includes('not running: stopped'), stopped.body.includes('<a href="/stopped/" class="on"')], [503, true, true], 'one whose program does not run: said at once, in the site')
     t.is((await ask(`${s.url}/nothing`)).status, 404, 'no component there: nothing here')
   } finally {
     await s.close()

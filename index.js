@@ -15,4 +15,5 @@ export { createComponents, ask, SIDE, COMPONENTS, TOPIC } from './internal/compo
 export { createStructure } from './internal/structure/index.js'
 export { summaryOf, follow } from './internal/records/index.js'
 export { PAGE } from './internal/page/index.js'
+export { site, SHOWN } from './internal/site/index.js'
 export { program, launch, end, stateOf, STATE } from './internal/process/index.js'

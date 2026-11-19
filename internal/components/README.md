@@ -32,9 +32,9 @@ None thrown: what fails is the form's `error`. Its program not running
   as documented (a form in an envelope, its key), written whole into a
   folder:
   - a page asked for, into the component's Splectral inbox:
-    `{ request: "page", path, query, base }`, `base` the
-    component's own address, `/<position>`; its completed form back in its
-    Splectral outbox, `output` the page's HTML;
+    `{ request: "page", path, query }`; its completed form back in its
+    Splectral outbox, `output` the page's HTML, its links relative to its
+    section (the site gives the page its base: `site`);
   - data asked for, by the component, in its outbox: `{ request: "data",
     at, command }`: run as a terminal runs a command, into the root
     mrepo's inbox, tagged as from outside (`haicc <at> <command>`), its

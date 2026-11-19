@@ -1,6 +1,6 @@
-// serve: Splectral's server, in this process: the page, the records of a
-// folder followed, each new one streamed, the install's structure folded
-// from them (README.md beside it).
+// serve: Splectral's server, in this process: the site, its own page, the
+// records of a folder followed, each new one streamed, the install's
+// structure folded from them (README.md beside it).
 import http from 'bare-http1'
 import { readFileSync, existsSync } from 'bare-fs'
 import { join, dirname } from 'bare-path'
@@ -8,6 +8,7 @@ import { URL } from 'bare-url'
 import { summaryOf, follow } from '../records/index.js'
 import { createStructure } from '../structure/index.js'
 import { PAGE } from '../page/index.js'
+import { site } from '../site/index.js'
 import { createComponents } from '../components/index.js'
 
 // Where it is served when nothing else is said: this machine only.
@@ -16,7 +17,7 @@ export const HOST = '127.0.0.1'
 // The root mrepo's unique URI when none is said.
 export const ROOT = 'local/boot'
 // The server's own paths: no component is named so.
-export const RESERVED = ['records', 'record', 'structure', 'stream', 'index.html']
+export const RESERVED = ['install', 'records', 'record', 'structure', 'stream', 'index.html']
 const KEY = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/
 
 // The server listening: on the port asked for; that one taken (and
@@ -59,7 +60,12 @@ export async function serve ({ outbox, dir = null, root = ROOT, port = PORT, hos
   const server = http.createServer((req, res) => {
     const path = new URL(req.url, 'http://x').pathname
     if (req.method !== 'GET') return json(res, 405, { error: 'GET only' })
-    if (path === '/' || path === '/index.html') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(PAGE) }
+    const html = (body, status = 200) => { res.writeHead(status, { 'content-type': 'text/html; charset=utf-8' }); res.end(body) }
+    // the site: its tabs, Splectral's own page first, then each component;
+    // the URI chopped: the site serves /, a component its first name and
+    // the rest, its page in the site's content area
+    const tabs = () => [{ name: 'install', label: 'install', href: '/install' }, ...(components?.list() ?? []).map(at => ({ name: at, label: at, href: `/${at}/` }))]
+    if (path === '/' || path === '/index.html' || path === '/install') return html(site({ tabs: tabs(), selected: 'install', content: PAGE }))
     if (path === '/records') return json(res, 200, { outbox, records: lines })
     if (path === '/structure') return json(res, 200, structure.snapshot())
     if (path === '/stream') {
@@ -79,14 +85,13 @@ export async function serve ({ outbox, dir = null, root = ROOT, port = PORT, hos
       res.writeHead(200, { 'content-type': 'application/json' })
       return res.end(readFileSync(join(outbox, file)))
     }
-    // a component's: its first name the component, the rest the page's path
+    // a component's section: its first name the component, the rest the page's path
     const names = path.split('/').filter(Boolean).map(n => decodeURIComponent(n))
     if (components && names.length && components.has(names[0])) {
       const query = Object.fromEntries(new URL(req.url, 'http://x').searchParams)
       components.page(names[0], names.slice(1).join('/'), query).then(({ status, form }) => {
-        if ('error' in form) { res.writeHead(status, { 'content-type': 'text/html; charset=utf-8' }); return res.end(errorPage(names[0], form.error)) }
-        res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })
-        res.end(String(form.output ?? ''))
+        if ('error' in form) return html(site({ tabs: tabs(), selected: names[0], content: errorPage(names[0], form.error) }), status)
+        html(site({ tabs: tabs(), selected: names[0], content: String(form.output ?? '') }))
       }, err => json(res, 500, { error: err.message }))
       return
     }

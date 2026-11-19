@@ -72,7 +72,7 @@ export function createComponents ({ dir, boot, root, wait = 20000, timeout = 120
       if (program && !programState(join(c.rec.folder, SIDE, 'packages', `${program}.state.json`))) return { status: 503, form: { error: `not running: ${at} (its service not started? haicc splectral/${at} service/start)` } }
       const key = guid()
       const answered = new Promise(resolve => pending.set(key, resolve))
-      inboxOf(join(c.rec.folder, SIDE)).write(key, wrap(`/${c.rec.mrepo}/${SIDE}/inbox`, { ...record(TOPIC, { request: 'page', path, query, base: `/${at}` }, key) }))
+      inboxOf(join(c.rec.folder, SIDE)).write(key, wrap(`/${c.rec.mrepo}/${SIDE}/inbox`, { ...record(TOPIC, { request: 'page', path, query }, key) }))
       let t = null
       const late = new Promise(resolve => { t = setTimeout(() => resolve(null), wait) })
       const form = await Promise.race([answered, late])
