@@ -122,8 +122,9 @@ export async function serve ({ outbox, dir = null, root = ROOT, port = PORT, hos
   }
 }
 
-// A component's page that could not be made: what was said, plainly.
+// A component's page that could not be made: what was said, plainly,
+// light and dark.
 const escape = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
 function errorPage (at, error) {
-  return `<!doctype html><meta charset="utf-8"><title>${escape(at)}</title><style>body{font:15px/1.5 system-ui,sans-serif;max-width:46rem;margin:2rem auto;padding:0 1rem}code{font-size:.9em}</style><h1>${escape(at)}</h1><p>The page could not be made.</p><pre><code>${escape(error)}</code></pre><p><a href="/">Splectral</a></p>`
+  return `<!doctype html><meta charset="utf-8"><title>${escape(at)}</title><style>:root{--bg:#fff;--fg:#1d1f23;--accent:#2457c5;--code:#f4f5f7}@media (prefers-color-scheme:dark){:root{--bg:#16181c;--fg:#e6e8eb;--accent:#7fa6ff;--code:#202329}}body{background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,sans-serif;max-width:46rem;margin:2rem auto;padding:0 1rem}a{color:var(--accent)}pre{background:var(--code);padding:.8rem;border-radius:6px;overflow-x:auto}code{font-size:.9em}</style><h1>${escape(at)}</h1><p>The page could not be made.</p><pre><code>${escape(error)}</code></pre><p><a href="/">Splectral</a></p>`
 }
