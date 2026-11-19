@@ -25,7 +25,7 @@ export async function install (exec, { uri, args: [component] = [] }) {
   // The mrepo there: deployed by this one (boot/deploy), linked.
   const link = (await shortcutsAt(exec, at))[0]
   const local = link ? await linked(exec, link.link) : null
-  if (!local?.folder) throw new Error(`not deployed: ${at} (boot/deploy ${at} base-package-service first)`)
+  if (!local?.folder) throw new Error(`not deployed: ${at} (boot/deploy ${at} haiccing/base-package-service first)`)
   const folder = join(dir, local.folder)
   if (!existsSync(folder)) throw new Error(`its folder is not there: ${folder}`)
   const side = join(folder, SIDE)
