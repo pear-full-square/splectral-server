@@ -43,4 +43,8 @@ It cannot listen there: `not served at <host>:<port>`.
 
 ## Also exported
 
+`mreposOf(snapshot)`: the install's mrepos as a command names them,
+from the structure: `{ version, mrepos: [{ at, depth, package }] }`,
+each by its position from the root (`.`, `docs`, `splectral/help`), in
+the tree's order; what a component asks for (`components`).
 `PORT`: 4400. `HOST`: `127.0.0.1`. `ROOT`: `local/boot`.

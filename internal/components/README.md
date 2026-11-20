@@ -4,10 +4,12 @@ Splectral's components as the server sees them, and the exchange with each over 
 
 ## Signature
 
-- `createComponents({ dir, boot, root, wait, timeout, every })`: the
-  components `splectral/install` recorded in Splectral's folder `dir`
+- `createComponents({ dir, boot, root, mrepos, wait, timeout, every })`:
+  the components `splectral/install` recorded in Splectral's folder `dir`
   (`components/<position>.json`), each one's outbox followed; `boot` the
-  root mrepo's folder, its inbox the one gateway; `root` its unique URI.
+  root mrepo's folder, its inbox the one gateway; `root` its unique URI;
+  `mrepos()` the install's mrepos as the server knows them (`serve`'s
+  `mreposOf`).
 - `ask({ boot, root, form, timeout })`: a data request run.
 - `recordOf(dir, position)`: where a component's record is.
 - `SIDE` (`splectral`), `COMPONENTS` (`components`), `TOPIC`
@@ -18,7 +20,8 @@ Splectral's components as the server sees them, and the exchange with each over 
 - `createComponents`: `{ has(position), list(), page(position, path,
   query), stop() }`; `page` answers `{ status, form }`, the form completed
   with its `output`, the page, or its `error`.
-- `ask`: `{ output }` or `{ error }`.
+- `ask`: `{ output }` or `{ error }`; with `raw: true` in the form, also
+  `record`, the response whole as its folder holds it.
 
 ## Errors
 
@@ -38,7 +41,15 @@ None thrown: what fails is the form's `error`. Its program not running
   - data asked for, by the component, in its outbox: `{ request: "data",
     at, command }`: run as a terminal runs a command, into the root
     mrepo's inbox, tagged as from outside (`haicc <at> <command>`), its
-    completed form written into the component's inbox under the same key.
+    completed form written into the component's inbox under the same key;
+    `raw: true` asks for the response whole as well (`record`), what the
+    terminal reads and prints;
+  - the install's mrepos, by the component, in its outbox: `{ request:
+    "mrepos" }`: answered by the server from what it knows, its
+    structure, nothing run: `output` `{ version, mrepos: [{ at, depth,
+    package }] }`, each mrepo by the position a command names it with
+    (`.`, `docs`, `splectral/help`); `version` moves when the structure
+    changes, so a component knows when what it keeps is stale.
 - **The boxes are queues**: a record taken is removed, by whoever reads
   that box. What a component keeps comes later, with commit times.
 - **A watcher at each end**: the server follows each component's outbox

@@ -19,14 +19,17 @@ export const TOPIC = '/splectral'
 const completed = form => form && typeof form === 'object' && ('output' in form || 'error' in form)
 
 // dir: Splectral's own folder; boot: the root mrepo's folder (its inbox
-// the one gateway), root its unique URI.
-export function createComponents ({ dir, boot, root, wait = 20000, timeout = 120, every = 2000 }) {
+// the one gateway), root its unique URI; mrepos: the install's mrepos as
+// the server knows them, { version, mrepos }.
+export function createComponents ({ dir, boot, root, mrepos = () => ({ version: 0, mrepos: [] }), wait = 20000, timeout = 120, every = 2000 }) {
   const known = new Map()
   const pending = new Map()
   const folder = join(dir, COMPONENTS)
   mkdirSync(folder, { recursive: true })
   // A component's record read; its outbox followed: a page answered, a
-  // data request run. Each record taken is removed: the boxes are queues.
+  // data request run, the install's mrepos said. Each record taken is
+  // removed: the boxes are queues.
+  const back = (rec, key, form) => inboxOf(join(rec.folder, SIDE)).write(key, wrap(`/${rec.mrepo}/${SIDE}/inbox`, { ...record(TOPIC, form, key) }))
   const take = (at, rec) => (envelope, file) => {
     const form = envelope?.value?.value
     const out = join(rec.folder, SIDE, 'outbox', file)
@@ -37,7 +40,12 @@ export function createComponents ({ dir, boot, root, wait = 20000, timeout = 120
     }
     if (form?.request === 'data' && !completed(form)) {
       rmSync(out, { force: true })
-      ask({ boot, root, form, timeout }).then(answer => inboxOf(join(rec.folder, SIDE)).write(envelope.key, wrap(`/${rec.mrepo}/${SIDE}/inbox`, { ...record(TOPIC, { ...form, ...answer }, envelope.key) })))
+      ask({ boot, root, form, timeout }).then(answer => back(rec, envelope.key, { ...form, ...answer }))
+      return
+    }
+    if (form?.request === 'mrepos' && !completed(form)) {
+      rmSync(out, { force: true })
+      back(rec, envelope.key, { ...form, output: mrepos() })
     }
   }
   const load = () => {
@@ -94,7 +102,9 @@ export function createComponents ({ dir, boot, root, wait = 20000, timeout = 120
 
 // A data request run as a terminal runs a command: into the root mrepo's
 // inbox, tagged as from outside, its completed form waited for in its
-// outbox folder. -> { output } or { error }
+// outbox folder. -> { output } or { error }; asked with `raw: true`, also
+// the response whole as its folder holds it, as the terminal reads it
+// ({ record }).
 export async function ask ({ boot, root, form, timeout = 120 }) {
   const at = form.at ?? '.'
   const command = Array.isArray(form.command) ? form.command : []
@@ -112,7 +122,9 @@ export async function ask ({ boot, root, form, timeout = 120 }) {
       if (Date.now() >= end) return { error: `no response in ${timeout} s: ${parts.join(' ')}` }
       await new Promise(resolve => { const t = setTimeout(resolve, 200); arrived = () => { clearTimeout(t); resolve() } })
     }
-    const done = JSON.parse(readFileSync(back, 'utf8')).value.value
-    return 'error' in done ? { error: done.error } : { output: done.output ?? null }
+    const text = readFileSync(back, 'utf8')
+    const done = JSON.parse(text).value.value
+    const raw = form.raw === true ? { record: text } : {}
+    return 'error' in done ? { error: done.error, ...raw } : { output: done.output ?? null, ...raw }
   } finally { watcher?.close() }
 }

@@ -34,15 +34,15 @@ function listen (server, port, host, other) {
 }
 
 export async function serve ({ outbox, dir = null, root = ROOT, port = PORT, host = HOST, other = true, keep = 500, every = 2000, wait = 20000 }) {
+  // The install as the records made it: every record folded, also those
+  // no longer among the lines.
+  const structure = createStructure(root)
   // Its components, where it has a folder of its own: each at its URI.
-  const components = dir ? createComponents({ dir, boot: dirname(outbox), root, wait, every }) : null
+  const components = dir ? createComponents({ dir, boot: dirname(outbox), root, mrepos: () => mreposOf(structure.snapshot()), wait, every }) : null
   // The lines shown: a record a line, the oldest first, the last `keep`.
   const lines = []
   const files = new Map()
   const clients = new Set()
-  // The install as the records made it: every record folded, also those
-  // no longer among the lines.
-  const structure = createStructure(root)
   const following = follow(outbox, (envelope, file) => {
     const line = summaryOf(envelope)
     if (!line) return
@@ -120,6 +120,19 @@ export async function serve ({ outbox, dir = null, root = ROOT, port = PORT, hos
       await closed
     }
   }
+}
+
+// The install's mrepos as a command names them: each by its position from
+// the root (`.`, `docs`, `splectral/help`), the tree's order, its depth.
+export function mreposOf ({ version, nodes }) {
+  const positions = new Map()
+  const mrepos = nodes.map(n => {
+    const above = n.parent === null ? null : positions.get(n.parent)
+    const at = above === null ? '.' : above === '.' ? n.at : `${above}/${n.at}`
+    positions.set(n.uri, at)
+    return { at, depth: n.depth, package: n.package }
+  })
+  return { version, mrepos }
 }
 
 // A component's page that could not be made: what was said, plainly,
