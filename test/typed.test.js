@@ -10,7 +10,7 @@ import { record, wrap } from 'mrepo-base-request'
 import { encodeAnswer, decodeAnswer, typedBox, follow, SIDE } from '../index.js'
 
 const here = join(dirname(fileURLToPath(import.meta.url)), '..')
-const ANSWER = { type: 'record', name: 'haiccing.basePackageHelp.AnnotateAnswer', fields: [{ name: 'help', type: 'string' }, { name: 'answer', type: { type: 'array', items: 'string' } }] }
+const ANSWER = { type: 'record', name: 'haiccing.basePackageHelp.annotateAnswer', fields: [{ name: 'help', type: 'string' }, { name: 'answer', type: { type: 'array', items: 'string' } }] }
 
 test('typed: a data answer as AVRO, each level its own schema, read back; as asked when it is like it, else as written', (t) => {
   const reg = registry()

@@ -1,6 +1,6 @@
 {
   "type": "record",
-  "name": "pearFullSquare.splectralServer.Data",
+  "name": "pearFullSquare.splectralServer.data",
   "doc": "A component's data request and its answer, over its Splectral inbox: a command run where it says, its output the next level (the schema it was asked as, or json), single-object encoded",
   "fields": [
     { "name": "request", "type": "string" },
