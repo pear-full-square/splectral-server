@@ -30,7 +30,7 @@ export function createStructure (root) {
       if (!n || isReplica(at)) return null
       const was = childAt(node, out.deployed)
       if (was) drop(was.uri)
-      nodes.set(out.mrepo, { uri: out.mrepo, parent: node, at: out.deployed, package: out.package ?? null, service: null, container: null })
+      nodes.set(out.mrepo, { uri: out.mrepo, parent: node, at: out.deployed, package: out.package ?? null, service: typeof out.service === 'string' ? out.service : null, container: null })
       return out.mrepo
     }
     // torn down: the child at that position, and what was below it

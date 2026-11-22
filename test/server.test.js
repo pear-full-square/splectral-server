@@ -116,7 +116,8 @@ test('the install folded from its completed records: its mrepos a tree, each wit
   t.is(s.apply(done(['local/elsewhere'], { service: 'started', state: 'started' })), null, 'executed in an mrepo it does not know: nothing')
   t.is(s.apply({ mode: 'atomic' }), null, 'no record: nothing')
   // torn down: the node and what was below it
-  t.is(s.apply(done([], { deployed: 'splectral', mrepo: 'local/splectral', package: 'haiccing/base-package-splectral' })), 'local/splectral')
+  t.is(s.apply(done([], { deployed: 'splectral', mrepo: 'local/splectral', package: 'haiccing/base-package-splectral', commission: 'done', service: 'started' })), 'local/splectral')
+  t.is(at('local/splectral').service, 'started', 'a deploy that says its service state, its commission done: that state')
   t.is(s.apply(done([], { tornDown: 'host' })), 'local/boot', 'a teardown executed at the root: its child gone; the root changed')
   t.alike(s.snapshot().nodes.map(x => x.uri), ['local/boot', 'local/splectral'], 'the host and the nodes below it gone')
   t.alike([s.apply(done([], [{ tornDown: 'splectral' }, { tornDown: 'nothing' }])), s.snapshot().nodes.length], ['local/boot', 1], 'several torn down at once: a list, each taken')
