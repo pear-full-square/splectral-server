@@ -32,7 +32,9 @@ runtime config laid (`runtime/hooks/start.haicc`, ...).
   position for a component`.
 - Nothing deployed there: `not deployed: <position> (boot/deploy
   <position> haiccing/base-package-service first)`.
-- A component there already: deploy and teardown, no upgrade in place.
+- Another component there already: deploy and teardown, no upgrade in
+  place. The same one again is allowed (idempotent): a warning,
+  `installed already`, nothing done, `again: true` in the answer.
 - No component named, or not `<org>/<package>`; not of the `splectral`
   organisation: `not a Splectral component`.
 - Its list: none; not ending with itself; naming another organisation's

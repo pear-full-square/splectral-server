@@ -37,7 +37,14 @@ export async function install (exec, { uri, args: [component] = [] }) {
     return finish(exec, dir, at, resumed, JSON.parse(readFileSync(join(side, 'component.json'), 'utf8')))
   }
   if (component === undefined || component === '') throw new Error('missing argument: package')
-  if (existsSync(join(side, 'component.json'))) throw new Error(`a component there already: ${at} (deploy and teardown, no upgrade in place)`)
+  // Idempotent: the same component there already: allowed, a warning,
+  // nothing done; another: refused (deploy and teardown, no upgrade in place)
+  if (existsSync(join(side, 'component.json'))) {
+    const was = JSON.parse(readFileSync(join(side, 'component.json'), 'utf8'))
+    if (was.component !== component) throw new Error(`a component there already: ${at}, ${was.component} (deploy and teardown, no upgrade in place)`)
+    exec.log('warn', 'installed already', { at, component })
+    return { installed: at, component, mrepo: was.mrepo, packages: was.list, laid: [], again: true }
+  }
   // The component's list, from the sources this mrepo deploys from: all
   // of it of the component's own organisation (a list names none of
   // another's), placed in the mrepo's folder, Splectral's side of it.
