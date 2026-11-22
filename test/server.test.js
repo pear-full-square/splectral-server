@@ -102,6 +102,8 @@ test('the install folded from its completed records: its mrepos a tree, each wit
   t.is(s.apply(done(['local/host', 'swarm-1/node-1'], { created: 'container', mrepo: 'swarm-1/node-1/container', container: { name: 'haicc-swarm-1-node-1-abc', image: 'haicc-node:x' } })), 'swarm-1/node-1', 'its replica made: the node changed, no node of its own')
   t.alike(at('swarm-1/node-1').container, { name: 'haicc-swarm-1-node-1-abc', state: 'created', service: null }, 'the node\'s container: made')
   s.apply(done(['local/host', 'swarm-1/node-1'], { started: 'container', container: 'haicc-swarm-1-node-1-abc', state: 'running' }))
+  s.apply(done(['local/host', 'swarm-1/node-2'], { started: 'container', container: 'haicc-swarm-1-node-2-abc', state: 'running', service: 'started' }))
+  t.is(at('swarm-1/node-2').container?.service, 'started', 'a container started, its replica\'s service said with it (its commission done): that state')
   t.is(s.apply(done(['local/host', 'swarm-1/node-1', 'swarm-1/node-1/container'], { service: 'started', state: 'started' })), 'swarm-1/node-1', 'a service command executed in the replica: its node changed')
   t.alike([at('swarm-1/node-1').service, at('swarm-1/node-1').container, s.snapshot().nodes.length], ['started', { name: 'haicc-swarm-1-node-1-abc', state: 'running', service: 'started' }, 4], 'the node: its own state, its container running with the replica\'s state; four nodes still')
   t.is(s.apply(done(['local/host', 'swarm-1/node-1', 'swarm-1/node-1/container'], { deployed: 'x', mrepo: 'swarm-1/x' })), null, 'a deploy inside a replica: not shown')
