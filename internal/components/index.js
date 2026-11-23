@@ -34,6 +34,23 @@ const completed = form => form && typeof form === 'object' && ('output' in form 
 export function createComponents ({ dir, boot, root, mrepos = () => ({ version: 0, mrepos: [] }), wait = 20000, timeout = 120, every = 2000 }) {
   const known = new Map()
   const pending = new Map()
+  // An mrepo by its unique URI, resolved at the root from the install's
+  // registry (haicc/mrepos): its position from the root, through the
+  // links. Kept while the install's structure is the same.
+  const resolved = new Map()
+  const resolve = async uri => {
+    if (typeof uri !== 'string' || !/^[a-z][a-z0-9-]*(\/[a-z][a-z0-9-]*)+$/.test(uri)) return { error: `not a unique URI: ${uri} (<namespace>/<name>)` }
+    const id = `${mrepos().version}:${uri}`
+    if (resolved.has(id)) return resolved.get(id)
+    const asked = await ask({ boot, root, form: { at: '.', command: ['haicc/mrepos', uri] }, timeout })
+    if ('error' in asked) return asked
+    const found = (asked.output ?? []).find(m => m.uri === uri)
+    if (!found) return { error: `no mrepo ${uri} in the install's registry` }
+    if (found.position === null) return { error: `${uri}: not reachable from the root` }
+    const answer = { output: { uri, position: found.position } }
+    resolved.set(id, answer)
+    return answer
+  }
   const folder = join(dir, COMPONENTS)
   mkdirSync(folder, { recursive: true })
   // A component's record read; its outbox followed: a page answered, a
@@ -63,6 +80,11 @@ export function createComponents ({ dir, boot, root, mrepos = () => ({ version: 
     if (form?.request === 'mrepos' && !completed(form)) {
       rmSync(out, { force: true })
       back(rec, envelope.key, { ...form, output: mrepos() })
+      return
+    }
+    if (form?.request === 'mrepo' && !completed(form)) {
+      rmSync(out, { force: true })
+      resolve(form.uri).then(answer => back(rec, envelope.key, { ...form, ...answer }))
     }
   }
   const load = () => {

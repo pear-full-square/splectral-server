@@ -11,7 +11,7 @@ The tests of splectral-server, a section per file, each test by its name.
 - the server: the site, its own page, the lines, one record whole, each new line streamed; closed
 - the program as its own process: started, its state, answering; ended; ended by itself with its runtime, and with its folder
 - the actions: start, status, stop; what start refuses
-- a component: a page asked through its Splectral inbox, its data request run through the root mrepo's inbox, the page served; one not answering; one not running
+- a component: a page asked through its Splectral inbox, its data request run through the root mrepo's inbox, the page served; an mrepo by its unique URI resolved, kept; one not answering; one not running
 
 ## `typed.test.js`
 

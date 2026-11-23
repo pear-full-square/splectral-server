@@ -54,7 +54,14 @@ None thrown: what fails is the form's `error`. Its program not running
     structure, nothing run: `output` `{ version, mrepos: [{ at, depth,
     package }] }`, each mrepo by the position a command names it with
     (`.`, `docs`, `splectral/help`); `version` moves when the structure
-    changes, so a component knows when what it keeps is stale.
+    changes, so a component knows when what it keeps is stale;
+  - an mrepo by its unique URI, by the component, in its outbox: `{
+    request: "mrepo", uri }`: resolved at the root from the install's
+    registry (`haicc . haicc/mrepos <uri>`): `output` `{ uri, position
+    }`, its position from the root through the links, what a data
+    request's `at` is (`local/docs` at `workbench/docs`); kept while the
+    structure is the same. Not in the registry, or not reachable from the
+    root: an error.
 - **The boxes are queues**: a record taken is removed, by whoever reads
   that box. What a component keeps comes later, with commit times.
 - **A watcher at each end**: the server follows each component's outbox
