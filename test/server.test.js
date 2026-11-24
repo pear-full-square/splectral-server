@@ -53,7 +53,7 @@ test('a folder of records followed: what is there, the oldest first; then each t
   try {
     drop(folder, record(2))
     drop(folder, record(1))
-    writeFileSync(join(folder, 'layer.json'), JSON.stringify({ mode: 'atomic' }))
+    writeFileSync(join(folder, '.layer.json'), JSON.stringify({ mode: 'atomic' }))
     const got = []
     const f = follow(folder, (envelope, file) => got.push([envelope.key ?? 'layer', file]), { every: 100 })
     t.alike(got.map(g => g[0]), [KEYS[1], KEYS[2], 'layer'], 'what is there, by when each was completed (a file without a time last)')
