@@ -42,7 +42,8 @@ export function followStream (folder, each, { every = 2000 } = {}) {
   let stopped = false
   const look = () => {
     if (stopped || !existsSync(folder)) return
-    for (const offset of box.list({ after: pointer, ascending: true })) {
+    // (from the latest back to the pointer: only what is new is walked)
+    for (const offset of box.list({ after: pointer }).reverse()) {
       let envelope = null
       // catch: not whole yet: looked at again the next time, nothing after it before it
       try { envelope = box.read(offset) } catch { return }
@@ -54,7 +55,9 @@ export function followStream (folder, each, { every = 2000 } = {}) {
   let watcher = null
   // catch: a folder that cannot be watched is looked at instead, every `every`
   try { watcher = fs.watch(folder, { recursive: true }, () => look()); watcher.on('error', () => {}) } catch {}
-  const timer = setInterval(look, every)
+  // (its records arrive in folders below it: where it is not told of them,
+  // it looks often; a look past the pointer costs what is new)
+  const timer = setInterval(look, Math.min(every, 250))
   return { stop: () => { stopped = true; clearInterval(timer); if (watcher) watcher.close() } }
 }
 
